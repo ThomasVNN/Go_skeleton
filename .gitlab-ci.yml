@@ -1,0 +1,51 @@
+image: golang:1.12
+stages:
+  - test
+  - build
+variables:
+  CI_GO_PROJECT: "gitlab.thovnn.vn/dc1/product-discovery/es_service"
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cache
+before_script:
+  - git config --global user.email "autobuild@thovnn.vn"
+  - git config --global user.name "Autobuild"
+  - git config --global url."https://gitlab-ci-token:$CI_JOB_TOKEN@gitlab.thovnn.vn/".insteadOf "https://gitlab.thovnn.vn/"
+  - export GO111MODULE=on
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
+go-1.12:
+  stage: build
+  only:
+    - /^RELEASE-.*$/
+    - /^TEST-.*$/
+    - master
+    - merge_requests
+  script:
+    - go build -o build/$CI_PROJECT_ID .
+go-1.13:
+  stage: build
+  image: golang:1.13
+  allow_failure: true
+  only:
+    - /^RELEASE-.*$/
+    - /^TEST-.*$/
+    - master
+    - merge_requests
+  script:
+    - go mod edit -go=1.13
+    - go env -w GOPRIVATE=gitlab.thovnn.vn
+    - go build -o build/$CI_PROJECT_ID .
+test:
+  stage: test
+  only:
+    - /^RELEASE-.*$/
+    - /^TEST-.*$/
+    - master
+    - merge_requests
+  script:
+    - echo "Skip test..."
+#    - cd appsrc
+#    - go test ./... -coverprofile=coverage.out
+#    - go tool cover -func=coverage.out | grep total
